@@ -120,9 +120,9 @@ const BIOMES=[
 ];
 const BW=[[1,.1,.25,1,.03,.05,.15,.1],[.1,.2,1,.02,.02,.02,.1,.4],[.3,.5,.1,.3,.02,.02,.5,.1],[.05,1,.3,.4,.5,1,.12,.6],[.04,.12,.04,.15,1,.1,.1,.1],[.01,.02,.01,.05,.7,.02,.02,.02]];   /* tree weights per biome: spruce, oak, birch, dead */
 const STAGES=[
-  {n:'The Treeline',need:3,cap:1,sp:.85,fog:.85,b:0,tb:0,lt:1.1,s0:35,sv:50,a0:80,av:[60,50],cr:6,cd:40,ap:.15},
-  {n:'Frozen Pass',need:3,cap:2,sp:.93,fog:.95,b:3,tb:3,lt:1.05,wo:1,s0:25,sv:36,a0:55,av:[45,40],cr:7,cd:32,ap:.3},
-  {n:'The Quarry',need:3,cap:3,sp:1,fog:1,b:0,tb:4,lt:.95,s0:15,sv:28,a0:40,av:[32,28],cr:9,cd:24,ap:.5},
+  {n:'The Treeline',need:3,cap:1,sp:.85,fog:.85,b:0,tb:0,lt:1.1,s0:35,sv:50,a0:50,av:[45,40],cr:6,cd:40,ap:.35},
+  {n:'Frozen Pass',need:3,cap:2,sp:.93,fog:.95,b:3,tb:3,lt:1.05,wo:1,s0:25,sv:36,a0:40,av:[40,35],cr:7,cd:32,ap:.4},
+  {n:'The Quarry',need:3,cap:3,sp:1,fog:1,b:0,tb:4,lt:.95,s0:15,sv:28,a0:35,av:[30,25],cr:9,cd:24,ap:.5},
   {n:'The Marsh',need:3,cap:4,sp:1.08,fog:1.15,b:7,tb:1,lt:.85,mud:1,s0:10,sv:20,a0:30,av:[24,22],cr:11,cd:16,ap:.7},
   {n:'The Burn',need:2,cap:6,sp:1.16,fog:1.3,b:2,tb:5,lt:.55,fk:.03,s0:6,sv:13,a0:22,av:[18,16],cr:13,cd:12,ap:.9},
   {n:'The Way Back',need:0,cap:0,type:'course',sp:1,fog:1,b:0,tb:0,lt:.7,s0:1e9,sv:1e9,a0:1e9,av:[1e9,0],cr:0,cd:1e9,ap:0}
@@ -271,7 +271,7 @@ function spawnMonster(){
 function newRun(stage){ S.stage=stage||0;
   mons.forEach(m=>scene.remove(m.g)); tapes.forEach(t=>scene.remove(t.g)); if(exitB)scene.remove(exitB.g);
   mons=[];tapes=[];exitB=null;got=0; const s0=S.stage?biomeSpot(STAGES[S.stage].b):[0,0]; P.set(s0[0],0,s0[1]); V.set(0,0); clearCourse(); if(STAGES[S.stage].type==='course')buildCourse();
-  Object.assign(S,{status:'play',run:true,pause:false,yaw:0,pitch:0,ty:0,tp:0,t:0,fear:0,stam:1,tired:false,ph:0,spawn:STAGES[S.stage].s0,hb:1,gl:0,amb:STAGES[S.stage].a0,sc:0,dark:0,adr:0,wasAdr:0,rg:0,cool:0,lb:'',bf:null,gc:null,crs:STAGES[S.stage].type==='course'?1:0,tent:0,vy:0,gr:true,lp:null,sf:null,dcam:null,boost:0,wz:-232});document.body.classList.remove('chase');$('#scare').style.display='none';$('#gl').style.filter='';
+  Object.assign(S,{status:'play',run:true,pause:false,yaw:0,pitch:0,ty:0,tp:0,t:0,fear:0,stam:1,tired:false,ph:0,spawn:STAGES[S.stage].s0,hb:1,gl:0,amb:STAGES[S.stage].a0,sc:0,dark:0,adr:0,wasAdr:0,rg:0,cool:0,lb:'',bf:null,gc:null,crs:STAGES[S.stage].type==='course'?1:0,tent:0,vy:0,gr:true,lp:null,sf:null,dcam:null,boost:0,pk:null,wz:-232});document.body.classList.remove('chase');$('#scare').style.display='none';$('#gl').style.filter='';
   for(let i=0;i<STAGES[S.stage].need;i++){const[x,z]=spot(22,STAGES[S.stage].tb);tapes.push(beacon(0x7dffb0,x,z,26))}
   document.body.classList.remove('dead'); hud(); msg(null); say('STAGE '+(S.stage+1)+': '+STAGES[S.stage].n,4000);
 }
@@ -299,7 +299,7 @@ function gadgets(){
   const sw=(S.t*2.2)%(Math.PI*2); c.fillStyle='rgba(232,239,230,.1)'; c.beginPath(); c.moveTo(M,M); c.arc(M,M,52,sw-.5,sw); c.fill();
   c.fillStyle='#e8efe6'; for(const t of tapes){const[rx,fw]=rel(t.x,t.z);if(Math.hypot(rx,fw)<R)c.fillRect(M+rx/R*52-1.5,M-fw/R*52-1.5,3,3)}
   for(const m of mons){
-    const[rx,fw]=rel(m.x,m.z), d=Math.hypot(rx,fw); if(d>R*1.6)continue;
+    const[rx,fw]=rel(m.x,m.z), d=Math.hypot(rx,fw); if(d>R*1.6||m.st==='peek')continue;
     const px=d>R?rx/d*R:rx, py=d>R?fw/d*R:fw, ch=m.st==='chase', pu=ch?1+Math.sin(S.t*12)*.3:1;
     c.fillStyle=ch?'#ff4a3a':m.st==='flee'?'#6a2a22':'#b8402f'; c.globalAlpha=d>R?.45:1;
     c.beginPath(); c.arc(M+px/R*52,M-py/R*52,(ch?5:4)*pu,0,7); c.fill(); c.globalAlpha=1;
@@ -391,7 +391,7 @@ addEventListener('keydown',e=>{keys[e.code]=1;if(e.code==='KeyR'&&S.status!=='pl
 addEventListener('keyup',e=>keys[e.code]=0);
 addEventListener('mousemove',e=>{
   if(!S.run||S.pause)return;
-  if(document.pointerLockElement||e.buttons){S.ty-=e.movementX*.0022;S.tp=Math.max(-1.3,Math.min(1.3,S.tp-e.movementY*.0022))}
+  if(document.pointerLockElement||e.buttons){{const mx=Math.max(-50,Math.min(50,e.movementX)),my=Math.max(-50,Math.min(50,e.movementY));S.ty-=mx*.0018;S.tp=Math.max(-1.3,Math.min(1.3,S.tp-my*.0018))}}
 });
 let wasLocked=false;
 document.addEventListener('pointerlockchange',()=>{
@@ -435,6 +435,7 @@ function shriek(dur,vol){
   });
   burst(6500,.5*vol,Math.min(dur,1.2),'highpass');
 }
+function peek(){const a=S.yaw+(Math.random()-.5)*.7,dist=5+Math.random()*2.5,m=mkMonster();m.x=P.x-Math.sin(a)*dist;m.z=P.z-Math.cos(a)*dist;m.st='peek';m.ct=.7;mons.push(m);stinger();scare(260);S.dark=.45}
 function nextStage(){tone(660,.3,1);tone(990,.3,1.4,.15);newRun(S.stage+1)}
 /* VHS tracking error: re-draws slices of the live frame, shifted, with a ghost and dead-tape noise */
 function glitch(){
@@ -462,7 +463,7 @@ function glitch(){
 function ambush(dist,front){
   const m=mkMonster(), a=S.yaw+(front?(Math.random()-.5)*.9:Math.PI+(Math.random()-.5)*.7);
   m.x=Math.max(-LIM,Math.min(LIM,P.x-Math.sin(a)*dist)); m.z=Math.max(-LIM,Math.min(LIM,P.z-Math.cos(a)*dist));
-  m.st=mons.some(o=>o.st==='chase')?'stalk':'chase'; m.ct=10; mons.push(m); stinger(); if(m.st==='chase')shriek(1,.6); scare(180); S.dark=.7;
+  m.st=mons.some(o=>o.st==='chase')?'stalk':'chase'; m.ct=10; mons.push(m); stinger(); if(m.st==='chase')shriek(1,.6); scare(300); S.dark=.7;
 }
 
 /* ---- final stage: parkour course back to the tent, then the tent itself ---- */
@@ -702,7 +703,7 @@ function end(win,m){ $('#adr').style.opacity=0; $('#thr').style.opacity=0; $('#p
 /* ---- simulation ---- */
 function update(dt){
   S.t+=dt;
-  S.yaw+=(S.ty-S.yaw)*(1-Math.exp(-dt*22)); S.pitch+=(S.tp-S.pitch)*(1-Math.exp(-dt*22));
+  S.yaw+=(S.ty-S.yaw)*(1-Math.exp(-dt*10)); S.pitch+=(S.tp-S.pitch)*(1-Math.exp(-dt*10));
   const fw=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0), st=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
   const moving=fw||st, power=S.adr>0, boost=(S.boost=Math.max(0,(S.boost||0)-dt))>0, wantRun=moving&&(power||(keys.ShiftLeft||keys.ShiftRight)&&(boost||(!S.tired&&S.stam>0)));
   const mud=STAGES[S.stage].mud&&(biomeAt(P.x,P.z)===7||biomeAt(P.x,P.z)===1)?.8:1, sp=(wantRun?(power?7.6:boost?6.8:6.1):3.2)*mud, len=Math.hypot(fw,st)||1;
@@ -729,7 +730,7 @@ function update(dt){
   /* tapes */
   for(const t of tapes){t.g.rotation.y+=dt;t.g.children[0].position.y=Math.sin(S.t*2+t.x)*.08;t.g.children[1].material.opacity=.4+Math.sin(S.t*3+t.x)*.12}
   {const tg=exitB?[exitB]:tapes; let nd=1e9; for(const t of tg)nd=Math.min(nd,Math.hypot(t.x-P.x,t.z-P.z)); const om=Math.round(nd/5)*5; if(tg.length&&om!==S.od){S.od=om;$('#obj').textContent=(exitB?'Run to the white light. ':'Find the green lights. ')+om+'m'}}
-  for(let i=tapes.length-1;i>=0;i--){const t=tapes[i];if(Math.hypot(t.x-P.x,t.z-P.z)<1.4){scene.remove(t.g);tapes.splice(i,1);got++;hud();tone(880,.25,.5);tone(1320,.2,.6,.1);S.boost=8;S.stam=1;S.tired=false;say('Energy.',1800);setTimeout(()=>{if(S.run&&Math.random()<STAGES[S.stage].ap)ambush(10,Math.random()<.5)},1500+Math.random()*2500);
+  for(let i=tapes.length-1;i>=0;i--){const t=tapes[i];if(Math.hypot(t.x-P.x,t.z-P.z)<1.4){scene.remove(t.g);tapes.splice(i,1);got++;hud();tone(880,.25,.5);tone(1320,.2,.6,.1);S.boost=8;S.stam=1;S.tired=false;setTimeout(()=>{if(S.run&&Math.random()<STAGES[S.stage].ap)ambush(10,Math.random()<.5)},1500+Math.random()*2500);
     showLore(STAGES.slice(0,S.stage).reduce((a,s)=>a+s.need,0)+got-1);
     if(got>=STAGES[S.stage].need){const[x,z]=spot(45);exitB=beacon(0xd8f0ff,x,z,40);say('That’s all of them. Where’s the light??',3500)} else{}}}
   if(exitB&&Math.hypot(exitB.x-P.x,exitB.z-P.z)<2){if(S.stage<STAGES.length-1){nextStage();return}end(true);return}
@@ -738,9 +739,10 @@ function update(dt){
   S.spawn-=dt; S.cool-=dt; const cap=Math.min(12,STAGES[S.stage].cap+(got>>1)+(S.t/90|0));
   if(S.spawn<=0&&mons.length<cap){spawnMonster();S.spawn=Math.max(6,STAGES[S.stage].sv*(1-Math.min(.35,S.t/700)))}
   S.amb-=dt; if(S.amb<=0){ambush(8+Math.random()*3,Math.random()<.65);S.amb=STAGES[S.stage].av[0]+Math.random()*STAGES[S.stage].av[1]}
+  S.pk=(S.pk==null?45+Math.random()*30:S.pk)-dt; if(S.pk<=0){if(!S.adr)peek();S.pk=60-S.stage*6+Math.random()*40}
   const fx=-Math.sin(S.yaw), fz=-Math.cos(S.yaw); let near=99, nm=null;
   for(const m of mons){
-    const dx=P.x-m.x,dz=P.z-m.z,d=Math.hypot(dx,dz)||1; if(d<near){near=d;nm=m}
+    const dx=P.x-m.x,dz=P.z-m.z,d=Math.hypot(dx,dz)||1; if(m.st==='peek'){m.ct-=dt;m.g.position.set(m.x,0,m.z);m.g.rotation.y=Math.atan2(dx,dz);if(m.ct<=0)m.rm=true;continue} if(d<near){near=d;nm=m}
     const seen=-(dx*fx+dz*fz)/d>.45&&d<40; if(!seen&&d<25&&Math.random()<dt*.01)screech();
     if(!m.st)m.st='stalk';
     if(m.st==='stalk'&&d<STAGES[S.stage].cr&&S.cool<=0&&!mons.some(o=>o.st==='chase')){m.st='chase';m.ct=10;shriek(1.1,.7);say('RUN.',1500)}
